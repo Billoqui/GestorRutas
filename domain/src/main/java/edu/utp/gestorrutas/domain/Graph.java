@@ -33,9 +33,11 @@ public class Graph {
         String origenId = connection.getOrigen().getId();
         String destinoId = connection.getDestino().getId();
 
-        if (!nodes.containsKey(origenId) || !nodes.containsKey(destinoId)) {
+        if (nodes.get(origenId) != connection.getOrigen()
+                || nodes.get(destinoId) != connection.getDestino()) {
+
             throw new IllegalArgumentException(
-                    "Los nodos de la conexión deben existir en el grafo"
+                    "Los nodos de la conexión deben ser los registrados en el grafo"
             );
         }
 

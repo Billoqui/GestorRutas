@@ -1,7 +1,10 @@
+
 package edu.utp.gestorrutas.domain;
 
+import java.util.Objects;
+
 /**
- * Representa una conexión entre dos nodos del grafo.
+ * Representa una conexión dirigida entre dos nodos del grafo.
  */
 public class Connection {
 
@@ -10,8 +13,20 @@ public class Connection {
     private final double peso;
 
     public Connection(Node origen, Node destino, double peso) {
-        this.origen = origen;
-        this.destino = destino;
+        this.origen = Objects.requireNonNull(
+                origen, "El nodo de origen no puede ser null"
+        );
+
+        this.destino = Objects.requireNonNull(
+                destino, "El nodo de destino no puede ser null"
+        );
+
+        if (!Double.isFinite(peso) || peso < 0) {
+            throw new IllegalArgumentException(
+                    "El peso debe ser un número finito y no negativo"
+            );
+        }
+
         this.peso = peso;
     }
 
