@@ -54,4 +54,36 @@ class NodeTest {
                 () -> new Node("A", null)
         );
     }
+
+    @Test
+    void debeCrearUnNodoConCoordenadas() {
+        Node nodo = new Node("A", "Arequipa", -16.4090, -71.5375);
+
+        assertEquals(-16.4090, nodo.getLatitude());
+        assertEquals(-71.5375, nodo.getLongitude());
+        assertTrue(nodo.hasCoordinates());
+    }
+
+    @Test
+    void debeIndicarCuandoUnNodoNoTieneCoordenadas() {
+        Node nodo = new Node("A", "Arequipa");
+
+        assertFalse(nodo.hasCoordinates());
+    }
+
+    @Test
+    void noDebePermitirUnaLatitudFueraDeRango() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new Node("A", "Arequipa", 95, -71.5375)
+        );
+    }
+
+    @Test
+    void noDebePermitirUnaLongitudFueraDeRango() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new Node("A", "Arequipa", -16.4090, 190)
+        );
+    }
 }

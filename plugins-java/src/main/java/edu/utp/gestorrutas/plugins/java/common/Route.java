@@ -1,4 +1,4 @@
-package edu.utp.gestorrutas.plugins.java.dijkstra;
+package edu.utp.gestorrutas.plugins.java.common;
 
 import java.util.List;
 

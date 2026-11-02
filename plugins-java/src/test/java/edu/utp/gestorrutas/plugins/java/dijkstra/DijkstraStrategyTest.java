@@ -3,6 +3,7 @@ package edu.utp.gestorrutas.plugins.java.dijkstra;
 import edu.utp.gestorrutas.domain.Connection;
 import edu.utp.gestorrutas.domain.Graph;
 import edu.utp.gestorrutas.domain.Node;
+import edu.utp.gestorrutas.plugins.java.common.RouteRequest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
