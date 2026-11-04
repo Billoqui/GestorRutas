@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -19,7 +20,8 @@ class ExecutionRepositoryTest {
         ExecutionRepository repository =
                 new ExecutionRepository(database);
 
-        repository.guardar("prueba-jdbc", 15, true);
+        String estrategia = "prueba-jdbc-" + UUID.randomUUID();
+        repository.guardar(estrategia, 15, true);
 
         String sql = """
                 SELECT COUNT(*)
@@ -31,7 +33,7 @@ class ExecutionRepositoryTest {
              PreparedStatement sentencia =
                      conexion.prepareStatement(sql)) {
 
-            sentencia.setString(1, "prueba-jdbc");
+            sentencia.setString(1, estrategia);
 
             try (ResultSet resultado = sentencia.executeQuery()) {
 
