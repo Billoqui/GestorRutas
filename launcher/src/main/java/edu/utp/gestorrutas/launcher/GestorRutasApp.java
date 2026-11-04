@@ -24,6 +24,8 @@ import edu.utp.gestorrutas.adaptive.AdaptiveConfigLoader;
 import edu.utp.gestorrutas.persistence.DatabaseConnection;
 import edu.utp.gestorrutas.persistence.AdaptationDecisionRepository;
 
+import edu.utp.gestorrutas.persistence.ExecutionRepository;
+
 public class GestorRutasApp {
 
     public static void main(String[] args) {
@@ -36,8 +38,9 @@ public class GestorRutasApp {
 
         DatabaseConnection conexionBD = new DatabaseConnection();
 
-        AdaptationDecisionRepository repositorioDecisiones =
-                new AdaptationDecisionRepository(conexionBD);
+        AdaptationDecisionRepository repositorioDecisiones = new AdaptationDecisionRepository(conexionBD);
+
+	    ExecutionRepository repositorioEjecuciones = new ExecutionRepository(conexionBD);
 
         StrategyRegistry registro = EstrategiasConfiguracion.crearRegistro();
         StrategySelector selector = new StrategySelector(registro);
@@ -71,6 +74,18 @@ public class GestorRutasApp {
         );
 
         Result<Route> resultado = motor.ejecutar(contexto, solicitud);
+
+        motor.obtenerEjecuciones().forEach(ejecucion -> {
+
+            repositorioEjecuciones.guardar(
+                    ejecucion.estrategia(),
+                    ejecucion.tiempoMs(),
+                    ejecucion.exitoso()
+            );
+
+        });
+
+        System.out.println("\nEjecuciones guardadas en PostgreSQL.");
 
         motor.obtenerHistorial().obtenerTodas().forEach(decision -> {
 
@@ -139,6 +154,18 @@ public class GestorRutasApp {
                 contextoAStar,
                 solicitud
         );
+
+        motorAStar.obtenerEjecuciones().forEach(ejecucion -> {
+
+            repositorioEjecuciones.guardar(
+                    ejecucion.estrategia(),
+                    ejecucion.tiempoMs(),
+                    ejecucion.exitoso()
+            );
+
+        });
+
+        System.out.println("\nEjecuciones de A* guardadas en PostgreSQL.");
 
         motorAStar.obtenerHistorial().obtenerTodas().forEach(decision -> {
 

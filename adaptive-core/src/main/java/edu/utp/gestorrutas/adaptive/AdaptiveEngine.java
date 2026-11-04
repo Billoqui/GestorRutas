@@ -98,6 +98,10 @@ public class AdaptiveEngine {
         return historial;
     }
 
+    public List<ExecutionRecord> obtenerEjecuciones() {
+        return monitor.obtenerEjecuciones();
+    }
+
     private <I, O> Result<O> ejecutarEstrategia(
             Strategy<?, ?> estrategia,
             I entrada
