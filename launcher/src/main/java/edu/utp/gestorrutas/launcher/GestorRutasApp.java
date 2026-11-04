@@ -1,19 +1,22 @@
+
 package edu.utp.gestorrutas.launcher;
 
 import edu.utp.gestorrutas.domain.Connection;
 import edu.utp.gestorrutas.domain.Graph;
 import edu.utp.gestorrutas.domain.Node;
+
 import edu.utp.gestorrutas.adaptive.AdaptationManager;
 import edu.utp.gestorrutas.adaptive.AdaptiveEngine;
 import edu.utp.gestorrutas.adaptive.ExecutionTimeRule;
 import edu.utp.gestorrutas.adaptive.MetricsMonitor;
 import edu.utp.gestorrutas.adaptive.StrategySelector;
+import edu.utp.gestorrutas.adaptive.StrategyRegistry;
+
 import edu.utp.gestorrutas.api.Context;
 import edu.utp.gestorrutas.api.Result;
+
 import edu.utp.gestorrutas.plugins.java.common.Route;
 import edu.utp.gestorrutas.plugins.java.common.RouteRequest;
-import edu.utp.gestorrutas.adaptive.StrategyRegistry;
-import edu.utp.gestorrutas.plugins.java.astar.AStarStrategy;
 
 public class GestorRutasApp {
 
@@ -26,8 +29,11 @@ public class GestorRutasApp {
         Graph grafo = crearGrafo();
 
         StrategyRegistry registro = EstrategiasConfiguracion.crearRegistro();
-
         StrategySelector selector = new StrategySelector(registro);
+
+        RouteRequest solicitud = new RouteRequest(grafo, "A", "D");
+
+        // PRIMERA PRUEBA: ADAPTACIÓN POR TIEMPO
 
         MetricsMonitor monitor = new MetricsMonitor();
 
@@ -47,11 +53,9 @@ public class GestorRutasApp {
                 false
         );
 
-        RouteRequest solicitud = new RouteRequest(grafo, "A", "D");
-
         Result<Route> resultado = motor.ejecutar(contexto, solicitud);
 
-        System.out.println("\nResultado de la ruta:");
+        System.out.println("\nRESULTADO DE LA ADAPTACIÓN POR TIEMPO:");
 
         if (resultado.exitoso()) {
             System.out.println("Ruta: " + resultado.valor().nodeIds());
@@ -59,7 +63,8 @@ public class GestorRutasApp {
         } else {
             System.out.println("Error: " + resultado.mensaje());
         }
-        System.out.println("\nMétricas de las estrategias:");
+
+        System.out.println("\nMÉTRICAS DE LA PRIMERA PRUEBA:");
 
         monitor.obtenerTodasLasMetricas().forEach((id, metricas) -> {
             System.out.println("\nEstrategia: " + id);
@@ -67,11 +72,17 @@ public class GestorRutasApp {
             System.out.println("Errores: " + metricas.obtenerTotalErrores());
             System.out.println("Tiempo promedio: " + metricas.obtenerTiempoPromedioMs() + " ms");
         });
-        System.out.println("\n================================");
-        System.out.println("          PRUEBA A*");
-        System.out.println("================================");
 
-        AStarStrategy aStar = new AStarStrategy();
+        // SEGUNDA PRUEBA: SELECCIÓN DE A*
+
+        MetricsMonitor monitorAStar = new MetricsMonitor();
+        AdaptationManager administradorAStar = new AdaptationManager();
+
+        AdaptiveEngine motorAStar = new AdaptiveEngine(
+                selector,
+                monitorAStar,
+                administradorAStar
+        );
 
         Context contextoAStar = new Context(
                 "A",
@@ -80,17 +91,33 @@ public class GestorRutasApp {
                 false
         );
 
-        Result<Route> resultadoAStar = aStar.execute(solicitud);
+        Result<Route> resultadoAStar = motorAStar.ejecutar(
+                contextoAStar,
+                solicitud
+        );
 
-        if (aStar.supports(contextoAStar) && resultadoAStar.exitoso()) {
+        System.out.println("\n================================");
+        System.out.println("       PRUEBA ADAPTATIVA A*");
+        System.out.println("================================");
+
+        if (resultadoAStar.exitoso()) {
             System.out.println("Ruta: " + resultadoAStar.valor().nodeIds());
             System.out.println("Distancia: " + resultadoAStar.valor().totalWeight() + " km");
             System.out.println("Mensaje: " + resultadoAStar.mensaje());
         } else {
-            System.out.println("A* no pudo calcular la ruta.");
-            System.out.println("Motivo: " + resultadoAStar.mensaje());
+            System.out.println("Error: " + resultadoAStar.mensaje());
         }
+
+        System.out.println("\nMÉTRICAS DE A*:");
+
+        monitorAStar.obtenerTodasLasMetricas().forEach((id, metricas) -> {
+            System.out.println("\nEstrategia: " + id);
+            System.out.println("Ejecuciones: " + metricas.obtenerTotalEjecuciones());
+            System.out.println("Errores: " + metricas.obtenerTotalErrores());
+            System.out.println("Tiempo promedio: " + metricas.obtenerTiempoPromedioMs() + " ms");
+        });
     }
+
     private static Graph crearGrafo() {
 
         Graph grafo = new Graph();
