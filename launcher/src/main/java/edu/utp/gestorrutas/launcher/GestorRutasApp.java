@@ -73,6 +73,21 @@ public class GestorRutasApp {
             System.out.println("Tiempo promedio: " + metricas.obtenerTiempoPromedioMs() + " ms");
         });
 
+        System.out.println("\nHISTORIAL DE ADAPTACIÓN:");
+
+        motor.obtenerHistorial().obtenerTodas().forEach(decision -> {
+
+            System.out.println("\nEstrategia inicial: " + decision.estrategiaInicial());
+
+            if (decision.huboCambio()) {
+                System.out.println("Decisión: cambiar de estrategia");
+                System.out.println("Motivos: " + decision.motivos());
+                System.out.println("Estrategia alternativa: " + decision.estrategiaAlternativa());
+            } else {
+                System.out.println("Decisión: mantener estrategia");
+            }
+        });
+
         // SEGUNDA PRUEBA: SELECCIÓN DE A*
 
         MetricsMonitor monitorAStar = new MetricsMonitor();

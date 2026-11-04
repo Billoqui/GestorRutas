@@ -1,14 +1,18 @@
+
 package edu.utp.gestorrutas.adaptive;
 
 import edu.utp.gestorrutas.api.Context;
 import edu.utp.gestorrutas.api.Result;
 import edu.utp.gestorrutas.api.Strategy;
 
+import java.util.List;
+
 public class AdaptiveEngine {
 
     private final StrategySelector selector;
     private final MetricsMonitor monitor;
     private final AdaptationManager administrador;
+    private final AdaptationHistory historial;
 
     public AdaptiveEngine(
             StrategySelector selector,
@@ -24,6 +28,7 @@ public class AdaptiveEngine {
         this.selector = selector;
         this.monitor = monitor;
         this.administrador = administrador;
+        this.historial = new AdaptationHistory();
     }
 
     public <I, O> Result<O> ejecutar(
@@ -52,7 +57,16 @@ public class AdaptiveEngine {
         StrategyMetrics metricas =
                 monitor.obtenerMetricas(estrategia.id());
 
-        if (!administrador.debeCambiar(metricas)) {
+        List<String> motivos =
+                administrador.obtenerMotivos(metricas);
+
+        if (motivos.isEmpty()) {
+            historial.registrar(new AdaptationDecision(
+                    estrategia.id(),
+                    motivos,
+                    null
+            ));
+
             return resultado;
         }
 
@@ -62,10 +76,26 @@ public class AdaptiveEngine {
         );
 
         if (alternativa == null) {
+            historial.registrar(new AdaptationDecision(
+                    estrategia.id(),
+                    motivos,
+                    null
+            ));
+
             return resultado;
         }
 
+        historial.registrar(new AdaptationDecision(
+                estrategia.id(),
+                motivos,
+                alternativa.id()
+        ));
+
         return ejecutarEstrategia(alternativa, entrada);
+    }
+
+    public AdaptationHistory obtenerHistorial() {
+        return historial;
     }
 
     private <I, O> Result<O> ejecutarEstrategia(

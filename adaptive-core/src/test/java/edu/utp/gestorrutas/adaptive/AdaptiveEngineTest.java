@@ -55,6 +55,14 @@ class AdaptiveEngineTest {
         assertEquals("HOLA", resultado.valor());
         assertEquals(1, monitor.obtenerMetricas("prueba")
                 .obtenerTotalEjecuciones());
+        assertEquals(1, motor.obtenerHistorial().obtenerTodas().size());
+
+        AdaptationDecision decision =
+                motor.obtenerHistorial().obtenerTodas().get(0);
+
+        assertEquals("prueba", decision.estrategiaInicial());
+        assertFalse(decision.huboCambio());
+        assertTrue(decision.motivos().isEmpty());
     }
 
     @Test
@@ -182,5 +190,75 @@ class AdaptiveEngineTest {
                 monitor.obtenerMetricas("estrategia-rapida")
                         .obtenerTotalEjecuciones()
         );
+        assertEquals(1, motor.obtenerHistorial().obtenerTodas().size());
+
+        AdaptationDecision decision =
+                motor.obtenerHistorial().obtenerTodas().get(0);
+
+        assertEquals("estrategia-lenta", decision.estrategiaInicial());
+        assertTrue(decision.huboCambio());
+        assertEquals("estrategia-rapida", decision.estrategiaAlternativa());
+
+        assertFalse(decision.motivos().isEmpty());
+        assertEquals(
+                "El tiempo promedio de ejecución superó el límite permitido",
+                decision.motivos().get(0)
+        );
+    }
+    @Test
+    void debeRegistrarCuandoNoExisteEstrategiaAlternativa() {
+
+        Strategy<String, String> estrategia = new Strategy<>() {
+            @Override
+            public String id() {
+                return "estrategia-unica";
+            }
+
+            @Override
+            public boolean supports(Context contexto) {
+                return true;
+            }
+
+            @Override
+            public Result<String> execute(String entrada) {
+                return new Result<>(
+                        true,
+                        "Resultado original",
+                        "Ejecución completada",
+                        150
+                );
+            }
+        };
+
+        StrategyRegistry registro = new StrategyRegistry();
+        registro.registrar(estrategia);
+
+        StrategySelector selector = new StrategySelector(registro);
+        MetricsMonitor monitor = new MetricsMonitor();
+
+        AdaptationManager administrador = new AdaptationManager();
+        administrador.agregarRegla(new ExecutionTimeRule(100));
+
+        AdaptiveEngine motor = new AdaptiveEngine(
+                selector,
+                monitor,
+                administrador
+        );
+
+        Result<String> resultado = motor.ejecutar(
+                new Context("A", "B", "distancia", false),
+                "entrada"
+        );
+
+        assertTrue(resultado.exitoso());
+        assertEquals("Resultado original", resultado.valor());
+
+        AdaptationDecision decision =
+                motor.obtenerHistorial().obtenerTodas().get(0);
+
+        assertEquals("estrategia-unica", decision.estrategiaInicial());
+        assertFalse(decision.huboCambio());
+        assertNull(decision.estrategiaAlternativa());
+        assertFalse(decision.motivos().isEmpty());
     }
 }
