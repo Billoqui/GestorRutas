@@ -40,11 +40,6 @@
             <version>${project.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>edu.utp.gestorrutas</groupId>
-            <artifactId>adaptive-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 
 </project>

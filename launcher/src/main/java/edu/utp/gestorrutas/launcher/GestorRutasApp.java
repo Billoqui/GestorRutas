@@ -18,6 +18,9 @@ import edu.utp.gestorrutas.api.Result;
 import edu.utp.gestorrutas.plugins.java.common.Route;
 import edu.utp.gestorrutas.plugins.java.common.RouteRequest;
 
+import edu.utp.gestorrutas.adaptive.AdaptiveConfig;
+import edu.utp.gestorrutas.adaptive.AdaptiveConfigLoader;
+
 public class GestorRutasApp {
 
     public static void main(String[] args) {
@@ -35,10 +38,16 @@ public class GestorRutasApp {
 
         // PRIMERA PRUEBA: ADAPTACIÓN POR TIEMPO
 
+        AdaptiveConfigLoader cargador = new AdaptiveConfigLoader();
+        AdaptiveConfig configuracion = cargador.cargar();
+
         MetricsMonitor monitor = new MetricsMonitor();
 
         AdaptationManager administrador = new AdaptationManager();
-        administrador.agregarRegla(new ExecutionTimeRule(0));
+
+        if (configuracion.isCambiarSiSuperaLimite()) {
+            administrador.agregarRegla(new ExecutionTimeRule(configuracion));
+        }
 
         AdaptiveEngine motor = new AdaptiveEngine(
                 selector,
