@@ -21,6 +21,9 @@ import edu.utp.gestorrutas.plugins.java.common.RouteRequest;
 import edu.utp.gestorrutas.adaptive.AdaptiveConfig;
 import edu.utp.gestorrutas.adaptive.AdaptiveConfigLoader;
 
+import edu.utp.gestorrutas.persistence.DatabaseConnection;
+import edu.utp.gestorrutas.persistence.AdaptationDecisionRepository;
+
 public class GestorRutasApp {
 
     public static void main(String[] args) {
@@ -30,6 +33,11 @@ public class GestorRutasApp {
         System.out.println("================================");
 
         Graph grafo = crearGrafo();
+
+        DatabaseConnection conexionBD = new DatabaseConnection();
+
+        AdaptationDecisionRepository repositorioDecisiones =
+                new AdaptationDecisionRepository(conexionBD);
 
         StrategyRegistry registro = EstrategiasConfiguracion.crearRegistro();
         StrategySelector selector = new StrategySelector(registro);
@@ -63,6 +71,18 @@ public class GestorRutasApp {
         );
 
         Result<Route> resultado = motor.ejecutar(contexto, solicitud);
+
+        motor.obtenerHistorial().obtenerTodas().forEach(decision -> {
+
+            repositorioDecisiones.guardar(
+                    decision.estrategiaInicial(),
+                    decision.estrategiaAlternativa(),
+                    decision.motivos()
+            );
+
+        });
+
+        System.out.println("\nDecisión adaptativa guardada en PostgreSQL.");
 
         System.out.println("\nRESULTADO DE LA ADAPTACIÓN POR TIEMPO:");
 
@@ -119,6 +139,18 @@ public class GestorRutasApp {
                 contextoAStar,
                 solicitud
         );
+
+        motorAStar.obtenerHistorial().obtenerTodas().forEach(decision -> {
+
+            repositorioDecisiones.guardar(
+                    decision.estrategiaInicial(),
+                    decision.estrategiaAlternativa(),
+                    decision.motivos()
+            );
+
+        });
+
+        System.out.println("\nDecisión de A* guardada en PostgreSQL.");
 
         System.out.println("\n================================");
         System.out.println("       PRUEBA ADAPTATIVA A*");
