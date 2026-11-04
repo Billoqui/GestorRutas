@@ -13,6 +13,7 @@ import edu.utp.gestorrutas.api.Result;
 import edu.utp.gestorrutas.plugins.java.common.Route;
 import edu.utp.gestorrutas.plugins.java.common.RouteRequest;
 import edu.utp.gestorrutas.adaptive.StrategyRegistry;
+import edu.utp.gestorrutas.plugins.java.astar.AStarStrategy;
 
 public class GestorRutasApp {
 
@@ -66,6 +67,29 @@ public class GestorRutasApp {
             System.out.println("Errores: " + metricas.obtenerTotalErrores());
             System.out.println("Tiempo promedio: " + metricas.obtenerTiempoPromedioMs() + " ms");
         });
+        System.out.println("\n================================");
+        System.out.println("          PRUEBA A*");
+        System.out.println("================================");
+
+        AStarStrategy aStar = new AStarStrategy();
+
+        Context contextoAStar = new Context(
+                "A",
+                "D",
+                "distancia",
+                false
+        );
+
+        Result<Route> resultadoAStar = aStar.execute(solicitud);
+
+        if (aStar.supports(contextoAStar) && resultadoAStar.exitoso()) {
+            System.out.println("Ruta: " + resultadoAStar.valor().nodeIds());
+            System.out.println("Distancia: " + resultadoAStar.valor().totalWeight() + " km");
+            System.out.println("Mensaje: " + resultadoAStar.mensaje());
+        } else {
+            System.out.println("A* no pudo calcular la ruta.");
+            System.out.println("Motivo: " + resultadoAStar.mensaje());
+        }
     }
     private static Graph crearGrafo() {
 
@@ -85,7 +109,7 @@ public class GestorRutasApp {
         grafo.addConnection(new Connection(a, c, 3.0));
         grafo.addConnection(new Connection(b, d, 3.0));
         grafo.addConnection(new Connection(c, d, 2.0));
-        grafo.addConnection(new Connection(b, c, 2.0));
+        grafo.addConnection(new Connection(b, c, 3.0));
 
         return grafo;
     }
