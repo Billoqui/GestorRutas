@@ -84,4 +84,58 @@ class StrategySelectorTest {
                 () -> selector.seleccionar(null)
         );
     }
+    @Test
+    void debeSeleccionarOtraEstrategiaCuandoSeExcluyeLaPrimera() {
+        Strategy<String, String> primera = crearEstrategia("primera");
+        Strategy<String, String> segunda = crearEstrategia("segunda");
+
+        StrategyRegistry registro = new StrategyRegistry();
+        registro.registrar(primera);
+        registro.registrar(segunda);
+
+        StrategySelector selector = new StrategySelector(registro);
+
+        Strategy<?, ?> resultado = selector.seleccionar(
+                new Context("A", "B", "distancia", false),
+                "primera"
+        );
+
+        assertEquals("segunda", resultado.id());
+    }
+
+    @Test
+    void debeDevolverNuloSiTodasLasEstrategiasEstanExcluidas() {
+        Strategy<String, String> estrategia = crearEstrategia("primera");
+
+        StrategyRegistry registro = new StrategyRegistry();
+        registro.registrar(estrategia);
+
+        StrategySelector selector = new StrategySelector(registro);
+
+        Strategy<?, ?> resultado = selector.seleccionar(
+                new Context("A", "B", "distancia", false),
+                "primera"
+        );
+
+        assertNull(resultado);
+    }
+
+    private Strategy<String, String> crearEstrategia(String identificador) {
+        return new Strategy<>() {
+            @Override
+            public String id() {
+                return identificador;
+            }
+
+            @Override
+            public boolean supports(Context contexto) {
+                return true;
+            }
+
+            @Override
+            public Result<String> execute(String entrada) {
+                return new Result<>(true, entrada, "Correcto", 1);
+            }
+        };
+    }
 }

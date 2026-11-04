@@ -44,7 +44,28 @@ public class AdaptiveEngine {
             );
         }
 
-        return ejecutarEstrategia(estrategia, entrada);
+        Result<O> resultado = ejecutarEstrategia(
+                estrategia,
+                entrada
+        );
+
+        StrategyMetrics metricas =
+                monitor.obtenerMetricas(estrategia.id());
+
+        if (!administrador.debeCambiar(metricas)) {
+            return resultado;
+        }
+
+        Strategy<?, ?> alternativa = selector.seleccionar(
+                contexto,
+                estrategia.id()
+        );
+
+        if (alternativa == null) {
+            return resultado;
+        }
+
+        return ejecutarEstrategia(alternativa, entrada);
     }
 
     private <I, O> Result<O> ejecutarEstrategia(

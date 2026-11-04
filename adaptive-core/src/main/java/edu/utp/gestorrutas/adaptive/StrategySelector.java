@@ -18,7 +18,13 @@ public class StrategySelector {
     }
 
     public Strategy<?, ?> seleccionar(Context contexto) {
+        return seleccionar(contexto, null);
+    }
 
+    public Strategy<?, ?> seleccionar(
+            Context contexto,
+            String estrategiaExcluida
+    ) {
         if (contexto == null) {
             throw new IllegalArgumentException(
                     "El contexto no puede ser nulo"
@@ -27,7 +33,13 @@ public class StrategySelector {
 
         return registro.obtenerTodas()
                 .stream()
-                .filter(estrategia -> estrategia.supports(contexto))
+                .filter(estrategia ->
+                        estrategia.supports(contexto)
+                )
+                .filter(estrategia ->
+                        estrategiaExcluida == null
+                                || !estrategia.id().equals(estrategiaExcluida)
+                )
                 .findFirst()
                 .orElse(null);
     }
