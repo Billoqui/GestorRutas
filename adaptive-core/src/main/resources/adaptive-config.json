@@ -1,0 +1,6 @@
+﻿{
+  "adaptacion": {
+    "tiempoMaximoMs": 100,
+    "cambiarSiSuperaLimite": true
+  }
+}

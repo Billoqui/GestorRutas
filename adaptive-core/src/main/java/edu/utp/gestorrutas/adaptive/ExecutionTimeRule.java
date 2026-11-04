@@ -1,4 +1,3 @@
-
 package edu.utp.gestorrutas.adaptive;
 
 public class ExecutionTimeRule implements AdaptationRule {
@@ -7,13 +6,30 @@ public class ExecutionTimeRule implements AdaptationRule {
 
     public ExecutionTimeRule(double tiempoMaximoMs) {
 
-        if (tiempoMaximoMs < 0) {
+        if (tiempoMaximoMs <= 0) {
             throw new IllegalArgumentException(
-                    "El tiempo máximo no puede ser negativo"
+                    "El tiempo máximo debe ser mayor que cero"
             );
         }
 
         this.tiempoMaximoMs = tiempoMaximoMs;
+    }
+
+    public ExecutionTimeRule(AdaptiveConfig configuracion) {
+
+        if (configuracion == null) {
+            throw new IllegalArgumentException(
+                    "La configuración no puede ser nula"
+            );
+        }
+
+        if (!configuracion.isCambiarSiSuperaLimite()) {
+            throw new IllegalArgumentException(
+                    "La regla de tiempo está desactivada"
+            );
+        }
+
+        this.tiempoMaximoMs = configuracion.getTiempoMaximoMs();
     }
 
     @Override
