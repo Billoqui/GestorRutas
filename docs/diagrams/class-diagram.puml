@@ -1,0 +1,257 @@
+﻿@startuml
+title Diagrama de clases - Gestor de Rutas Adaptable
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+package "plugin-api" {
+    interface "Strategy<I, O>" as Strategy {
+        +id(): String
+        +supports(contexto: Context): boolean
+        +execute(entrada: I): Result<O>
+    }
+
+    class Context <<record>> {
+        +origen: String
+        +destino: String
+        +criterio: String
+        +permitePesosNegativos: boolean
+    }
+
+    class "Result<T>" as Result <<record>> {
+        +exitoso: boolean
+        +valor: T
+        +mensaje: String
+        +tiempoEjecucionMs: long
+    }
+}
+
+package "domain" {
+    class Node {
+        -id: String
+        -name: String
+        -latitude: double
+        -longitude: double
+        +hasCoordinates(): boolean
+    }
+
+    class Connection {
+        -origen: Node
+        -destino: Node
+        -peso: double
+    }
+
+    class Graph {
+        -nodes: Map<String, Node>
+        -connections: List<Connection>
+        +addNode(node: Node)
+        +addConnection(connection: Connection)
+        +getNode(id: String): Node
+        +getNodes(): Map
+        +getConnections(): List
+        +getOutgoingConnections(node: Node): List
+    }
+
+    class Haversine <<utility>> {
+        +calcularDistancia(a: Node, b: Node): double
+    }
+
+    Graph "1" o-- "*" Node
+    Graph "1" o-- "*" Connection
+    Connection --> "1" Node : origen
+    Connection --> "1" Node : destino
+    Haversine ..> Node
+}
+
+package "adaptive-core" {
+    class AdaptiveEngine {
+        -selector: StrategySelector
+        -monitor: MetricsMonitor
+        -administrador: AdaptationManager
+        -historial: AdaptationHistory
+        +ejecutar(entrada, contexto)
+        +obtenerHistorial()
+        +obtenerEjecuciones()
+    }
+
+    class StrategySelector {
+        -registro: StrategyRegistry
+        +seleccionar(contexto: Context)
+        +seleccionar(contexto: Context, excluirId: String)
+    }
+
+    class StrategyRegistry {
+        -estrategias: List<Strategy>
+        +registrar(estrategia: Strategy)
+        +obtenerTodas()
+        +buscarPorId(id: String)
+    }
+
+    class MetricsMonitor {
+        -metricas: Map<String, StrategyMetrics>
+        -ejecuciones: List<ExecutionRecord>
+        +registrarResultado(estrategia, resultado)
+        +obtenerMetricas(id: String)
+        +obtenerTodasLasMetricas()
+        +obtenerEjecuciones()
+    }
+
+    class StrategyMetrics {
+        -totalEjecuciones: int
+        -totalErrores: int
+        -tiempoTotalMs: long
+        +registrarEjecucion(resultado)
+        +obtenerTiempoPromedioMs(): double
+    }
+
+    class ExecutionRecord <<record>> {
+        +estrategia: String
+        +tiempoMs: long
+        +exitoso: boolean
+    }
+
+    class AdaptationManager {
+        -reglas: List<AdaptationRule>
+        +agregarRegla(regla: AdaptationRule)
+        +debeCambiar(metricas)
+        +obtenerMotivos(metricas)
+    }
+
+    interface AdaptationRule {
+        +debeCambiar(metricas: StrategyMetrics): boolean
+        +obtenerMotivo(): String
+    }
+
+    class ExecutionTimeRule {
+        -tiempoMaximoMs: double
+        +debeCambiar(metricas): boolean
+        +obtenerMotivo(): String
+    }
+
+    class ErrorThresholdRule {
+        -porcentajeMaximoErrores: double
+        +debeCambiar(metricas): boolean
+        +obtenerMotivo(): String
+    }
+
+    class AdaptationHistory {
+        -decisiones: List<AdaptationDecision>
+        +registrar(decision: AdaptationDecision)
+        +obtenerTodas()
+        +limpiar()
+    }
+
+    class AdaptationDecision <<record>> {
+        +estrategiaInicial: String
+        +motivos: List<String>
+        +estrategiaAlternativa: String
+        +huboCambio(): boolean
+    }
+
+    class AdaptiveConfig {
+        -tiempoMaximoMs: double
+        -cambiarSiSuperaLimite: boolean
+    }
+
+    class AdaptiveConfigRoot {
+        -adaptacion: AdaptiveConfig
+    }
+
+    class AdaptiveConfigLoader {
+        +cargar(): AdaptiveConfigRoot
+    }
+
+    AdaptiveEngine --> StrategySelector
+    AdaptiveEngine --> MetricsMonitor
+    AdaptiveEngine --> AdaptationManager
+    AdaptiveEngine --> AdaptationHistory
+
+    StrategySelector --> StrategyRegistry
+    StrategyRegistry o-- Strategy
+
+    MetricsMonitor --> StrategyMetrics
+    MetricsMonitor --> ExecutionRecord
+
+    AdaptationManager o-- AdaptationRule
+    ExecutionTimeRule ..|> AdaptationRule
+    ErrorThresholdRule ..|> AdaptationRule
+    ExecutionTimeRule --> AdaptiveConfig
+    AdaptationHistory o-- AdaptationDecision
+    AdaptiveConfigLoader ..> AdaptiveConfigRoot
+    AdaptiveConfigRoot *-- AdaptiveConfig
+}
+
+package "plugins-java" {
+    class DijkstraStrategy
+    class AStarStrategy
+    class Route <<record>> {
+        +nodeIds: List<String>
+        +totalWeight: double
+    }
+    class RouteRequest <<record>> {
+        +graph: Graph
+        +origenId: String
+        +destinoId: String
+    }
+
+    DijkstraStrategy ..|> Strategy
+    AStarStrategy ..|> Strategy
+    DijkstraStrategy ..> RouteRequest
+    DijkstraStrategy ..> Route
+    AStarStrategy ..> RouteRequest
+    AStarStrategy ..> Route
+    AStarStrategy ..> Haversine
+    RouteRequest --> Graph
+}
+
+package "plugins-scala" {
+    class DijkstraScalaStrategy
+    DijkstraScalaStrategy ..|> Strategy
+    DijkstraScalaStrategy ..> RouteRequest
+    DijkstraScalaStrategy ..> Route
+}
+
+package "persistence" {
+    class DatabaseConnection {
+        +conectar(): Connection
+    }
+
+    class ExecutionRepository {
+        -database: DatabaseConnection
+        +guardar(estrategia, tiempoMs, exitoso)
+        +listar()
+        +actualizar(id, estrategia, tiempoMs, exitoso)
+        +eliminar(id)
+    }
+
+    class AdaptationDecisionRepository {
+        -database: DatabaseConnection
+        +guardar(estrategiaInicial, estrategiaAlternativa, motivos)
+    }
+
+    ExecutionRepository --> DatabaseConnection
+    AdaptationDecisionRepository --> DatabaseConnection
+}
+
+package "launcher" {
+    class GestorRutasApp {
+        +main(args: String[])
+        -crearGrafo(): Graph
+    }
+
+    class EstrategiasConfiguracion {
+        +crearRegistro(): StrategyRegistry
+    }
+
+    GestorRutasApp ..> EstrategiasConfiguracion
+    GestorRutasApp ..> AdaptiveEngine
+    GestorRutasApp ..> ExecutionRepository
+    GestorRutasApp ..> AdaptationDecisionRepository
+    EstrategiasConfiguracion ..> StrategyRegistry
+    EstrategiasConfiguracion ..> AStarStrategy
+    EstrategiasConfiguracion ..> DijkstraStrategy
+    EstrategiasConfiguracion ..> DijkstraScalaStrategy
+}
+
+@enduml

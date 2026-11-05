@@ -1,0 +1,106 @@
+﻿@startuml
+title Arquitectura general - Gestor de Rutas Adaptable
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+left to right direction
+
+actor "Usuario" as Usuario
+
+package "launcher" {
+    component "GestorRutasApp" as App
+    component "EstrategiasConfiguracion" as ConfigEstrategias
+}
+
+package "adaptive-core" {
+    component "AdaptiveEngine" as Motor
+    component "StrategySelector" as Selector
+    component "StrategyRegistry" as Registro
+    component "MetricsMonitor" as Monitor
+    component "AdaptationManager" as Adaptador
+    component "AdaptationHistory" as Historial
+    component "Reglas de adaptación" as Reglas
+}
+
+package "plugin-api" {
+    interface "Strategy<I, O>" as Contrato
+    component "Context" as Contexto
+    component "Result<T>" as Resultado
+}
+
+package "plugins-java" {
+    component "DijkstraStrategy" as Dijkstra
+    component "AStarStrategy" as AStar
+    component "RouteRequest / Route" as DTOJava
+}
+
+package "plugins-scala" {
+    component "DijkstraScalaStrategy" as Scala
+}
+
+package "domain" {
+    component "Graph" as Grafo
+    component "Node" as Nodo
+    component "Connection" as Conexion
+    component "Haversine" as Distancia
+}
+
+package "persistence" {
+    component "ExecutionRepository" as RepoEjecuciones
+    component "AdaptationDecisionRepository" as RepoDecisiones
+    component "DatabaseConnection" as ConexionBD
+}
+
+database "PostgreSQL\ngestor_rutas" as BD
+
+Usuario --> App : Solicita cálculo de ruta
+App --> ConfigEstrategias : Registra plugins
+App --> Motor : Ejecuta solicitud
+App --> Contexto : Crea contexto
+App --> DTOJava : Prepara entrada
+
+Motor --> Selector : Solicita estrategia
+Selector --> Registro : Busca estrategia compatible
+Registro --> Contrato : Mantiene estrategias registradas
+
+Contrato <|.. Dijkstra
+Contrato <|.. AStar
+Contrato <|.. Scala
+
+Motor --> Monitor : Registra resultados
+Motor --> Adaptador : Consulta reglas
+Adaptador --> Reglas : Evalúa métricas
+Motor --> Historial : Conserva decisiones
+
+Dijkstra --> Grafo
+AStar --> Grafo
+AStar --> Distancia
+Scala --> Grafo
+Grafo --> Nodo
+Grafo --> Conexion
+Conexion --> Nodo
+
+Dijkstra --> Resultado
+AStar --> Resultado
+Scala --> Resultado
+Motor --> Resultado : Recibe resultado
+
+App --> RepoEjecuciones : Guarda ejecuciones
+App --> RepoDecisiones : Guarda decisiones
+RepoEjecuciones --> ConexionBD
+RepoDecisiones --> ConexionBD
+ConexionBD --> BD : JDBC
+
+note bottom of Contrato
+  Contrato común para plugins Java y Scala.
+  El motor adaptativo no depende de
+  la implementación concreta del algoritmo.
+end note
+
+note bottom of Motor
+  Selecciona, ejecuta, mide y puede
+  cambiar de estrategia según las reglas.
+end note
+
+@enduml
