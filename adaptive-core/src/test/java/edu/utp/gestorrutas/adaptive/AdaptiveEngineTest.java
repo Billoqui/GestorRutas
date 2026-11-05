@@ -27,7 +27,7 @@ class AdaptiveEngineTest {
                 return new Result<>(
                         true,
                         entrada.toUpperCase(),
-                        "Ejecución correcta",
+                        "EjecuciÃƒÆ’Ã‚Â³n correcta",
                         10
                 );
             }
@@ -127,7 +127,7 @@ class AdaptiveEngineTest {
                 return new Result<>(
                         true,
                         "Resultado lento",
-                        "Ejecución completada",
+                        "EjecuciÃƒÆ’Ã‚Â³n completada",
                         150
                 );
             }
@@ -148,8 +148,8 @@ class AdaptiveEngineTest {
             public Result<String> execute(String entrada) {
                 return new Result<>(
                         true,
-                        "Resultado rápido",
-                        "Ejecución completada",
+                        "Resultado rÃƒÆ’Ã‚Â¡pido",
+                        "EjecuciÃƒÆ’Ã‚Â³n completada",
                         10
                 );
             }
@@ -177,7 +177,7 @@ class AdaptiveEngineTest {
         );
 
         assertTrue(resultado.exitoso());
-        assertEquals("Resultado rápido", resultado.valor());
+        assertEquals("Resultado rÃƒÆ’Ã‚Â¡pido", resultado.valor());
 
         assertEquals(
                 1,
@@ -224,7 +224,7 @@ class AdaptiveEngineTest {
                 return new Result<>(
                         true,
                         "Resultado original",
-                        "Ejecución completada",
+                        "EjecuciÃƒÆ’Ã‚Â³n completada",
                         150
                 );
             }
@@ -260,5 +260,94 @@ class AdaptiveEngineTest {
         assertFalse(decision.huboCambio());
         assertNull(decision.estrategiaAlternativa());
         assertFalse(decision.motivos().isEmpty());
+    }
+
+
+    @Test
+    void debeProbarTresEstrategiasConsecutivas() {
+
+        Strategy<String, String> primera = crearEstrategiaLenta(
+                "estrategia-primera",
+                "Resultado primero"
+        );
+
+        Strategy<String, String> segunda = crearEstrategiaLenta(
+                "estrategia-segunda",
+                "Resultado segundo"
+        );
+
+        Strategy<String, String> tercera = crearEstrategiaLenta(
+                "estrategia-tercera",
+                "Resultado tercero"
+        );
+
+        StrategyRegistry registro = new StrategyRegistry();
+        registro.registrar(primera);
+        registro.registrar(segunda);
+        registro.registrar(tercera);
+
+        StrategySelector selector = new StrategySelector(registro);
+        MetricsMonitor monitor = new MetricsMonitor();
+
+        AdaptationManager administrador = new AdaptationManager();
+        administrador.agregarRegla(new ExecutionTimeRule(100));
+
+        AdaptiveEngine motor = new AdaptiveEngine(
+                selector,
+                monitor,
+                administrador
+        );
+
+        Result<String> resultado = motor.ejecutar(
+                new Context("A", "B", "distancia", false),
+                "entrada"
+        );
+
+        assertTrue(resultado.exitoso());
+        assertEquals("Resultado tercero", resultado.valor());
+
+        assertEquals(1, monitor.obtenerMetricas("estrategia-primera")
+                .obtenerTotalEjecuciones());
+
+        assertEquals(1, monitor.obtenerMetricas("estrategia-segunda")
+                .obtenerTotalEjecuciones());
+
+        assertEquals(1, monitor.obtenerMetricas("estrategia-tercera")
+                .obtenerTotalEjecuciones());
+
+        AdaptationDecision decision =
+                motor.obtenerHistorial().obtenerTodas().get(0);
+
+        assertEquals("estrategia-primera", decision.estrategiaInicial());
+        assertEquals("estrategia-tercera", decision.estrategiaAlternativa());
+        assertTrue(decision.huboCambio());
+        assertEquals(3, decision.motivos().size());
+    }
+
+    private Strategy<String, String> crearEstrategiaLenta(
+            String id,
+            String valor
+    ) {
+        return new Strategy<>() {
+            @Override
+            public String id() {
+                return id;
+            }
+
+            @Override
+            public boolean supports(Context contexto) {
+                return true;
+            }
+
+            @Override
+            public Result<String> execute(String entrada) {
+                return new Result<>(
+                        true,
+                        valor,
+                        "EjecuciÃƒÆ’Ã‚Â³n completada",
+                        150
+                );
+            }
+        };
     }
 }

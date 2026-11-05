@@ -1,11 +1,13 @@
-
 package edu.utp.gestorrutas.adaptive;
 
 import edu.utp.gestorrutas.api.Context;
 import edu.utp.gestorrutas.api.Result;
 import edu.utp.gestorrutas.api.Strategy;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class AdaptiveEngine {
 
@@ -41,57 +43,63 @@ public class AdaptiveEngine {
             );
         }
 
-        Strategy<?, ?> estrategia = selector.seleccionar(contexto);
+        Strategy<?, ?> actual = selector.seleccionar(contexto);
 
-        if (estrategia == null) {
+        if (actual == null) {
             throw new IllegalStateException(
                     "No existe una estrategia compatible"
             );
         }
 
-        Result<O> resultado = ejecutarEstrategia(
-                estrategia,
-                entrada
-        );
+        String estrategiaInicial = actual.id();
 
-        StrategyMetrics metricas =
-                monitor.obtenerMetricas(estrategia.id());
+        Set<String> estrategiasEjecutadas = new HashSet<>();
+        List<String> motivosAcumulados = new ArrayList<>();
 
-        List<String> motivos =
-                administrador.obtenerMotivos(metricas);
+        Result<O> resultado;
 
-        if (motivos.isEmpty()) {
-            historial.registrar(new AdaptationDecision(
-                    estrategia.id(),
-                    motivos,
-                    null
-            ));
+        while (true) {
 
-            return resultado;
+            estrategiasEjecutadas.add(actual.id());
+
+            resultado = ejecutarEstrategia(actual, entrada);
+
+            StrategyMetrics metricas =
+                    monitor.obtenerMetricas(actual.id());
+
+            List<String> motivos =
+                    administrador.obtenerMotivos(metricas);
+
+            if (motivos.isEmpty()) {
+                break;
+            }
+
+            motivosAcumulados.addAll(motivos);
+
+            Strategy<?, ?> alternativa =
+                    selector.seleccionarExcluyendo(
+                            contexto,
+                            estrategiasEjecutadas
+                    );
+
+            if (alternativa == null) {
+                break;
+            }
+
+            actual = alternativa;
         }
 
-        Strategy<?, ?> alternativa = selector.seleccionar(
-                contexto,
-                estrategia.id()
-        );
-
-        if (alternativa == null) {
-            historial.registrar(new AdaptationDecision(
-                    estrategia.id(),
-                    motivos,
-                    null
-            ));
-
-            return resultado;
-        }
+        String estrategiaFinal = actual.id();
 
         historial.registrar(new AdaptationDecision(
-                estrategia.id(),
-                motivos,
-                alternativa.id()
+                estrategiaInicial,
+                motivosAcumulados,
+                estrategiaInicial.equals(estrategiaFinal)
+                        ? null
+                        : estrategiaFinal
         ));
 
-        return ejecutarEstrategia(alternativa, entrada);
+        return resultado;
     }
 
     public AdaptationHistory obtenerHistorial() {
