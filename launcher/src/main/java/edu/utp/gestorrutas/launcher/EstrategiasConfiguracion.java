@@ -1,16 +1,21 @@
+
 package edu.utp.gestorrutas.launcher;
 
 import edu.utp.gestorrutas.adaptive.StrategyRegistry;
 import edu.utp.gestorrutas.api.Strategy;
-import edu.utp.gestorrutas.plugins.java.astar.AStarStrategy;
-import edu.utp.gestorrutas.plugins.java.common.Route;
-import edu.utp.gestorrutas.plugins.java.common.RouteRequest;
-import edu.utp.gestorrutas.plugins.java.dijkstra.DijkstraStrategy;
-import edu.utp.gestorrutas.plugins.scalaplugin.DijkstraScalaStrategy;
 
 import java.util.List;
 
 public class EstrategiasConfiguracion {
+
+    private static final String DIJKSTRA =
+            "edu.utp.gestorrutas.plugins.java.dijkstra.DijkstraStrategy";
+
+    private static final String ASTAR =
+            "edu.utp.gestorrutas.plugins.java.astar.AStarStrategy";
+
+    private static final String DIJKSTRA_SCALA =
+            "edu.utp.gestorrutas.plugins.scalaplugin.DijkstraScalaStrategy";
 
     public static StrategyRegistry crearRegistro(String criterio) {
 
@@ -20,26 +25,17 @@ public class EstrategiasConfiguracion {
             );
         }
 
-        Strategy<RouteRequest, Route> dijkstra =
-                new DijkstraStrategy();
-
-        Strategy<RouteRequest, Route> astar =
-                new AStarStrategy();
-
-        Strategy<RouteRequest, Route> scala =
-                new DijkstraScalaStrategy();
-
-        List<Strategy<RouteRequest, Route>> estrategias;
+        List<String> clases;
 
         switch (criterio.toLowerCase()) {
             case "tiempo" ->
-                    estrategias = List.of(dijkstra, astar, scala);
+                    clases = List.of(DIJKSTRA, ASTAR, DIJKSTRA_SCALA);
 
             case "distancia" ->
-                    estrategias = List.of(astar, dijkstra, scala);
+                    clases = List.of(ASTAR, DIJKSTRA, DIJKSTRA_SCALA);
 
             case "scala" ->
-                    estrategias = List.of(scala, dijkstra, astar);
+                    clases = List.of(DIJKSTRA_SCALA, DIJKSTRA, ASTAR);
 
             default -> throw new IllegalArgumentException(
                     "Criterio no reconocido: " + criterio
@@ -48,8 +44,34 @@ public class EstrategiasConfiguracion {
 
         StrategyRegistry registro = new StrategyRegistry();
 
-        estrategias.forEach(registro::registrar);
+        for (String nombreClase : clases) {
+            registro.registrar(cargarEstrategia(nombreClase));
+        }
 
         return registro;
+    }
+
+    private static Strategy<?, ?> cargarEstrategia(String nombreClase) {
+
+        try {
+            Class<?> clase = Class.forName(nombreClase);
+
+            Class<? extends Strategy> claseEstrategia =
+                    clase.asSubclass(Strategy.class);
+
+            return claseEstrategia
+                    .getDeclaredConstructor()
+                    .newInstance();
+
+        } catch (ClassNotFoundException | ClassCastException |
+                 NoSuchMethodException | InstantiationException |
+                 IllegalAccessException |
+                 java.lang.reflect.InvocationTargetException e) {
+
+            throw new IllegalStateException(
+                    "No se pudo cargar la estrategia: " + nombreClase,
+                    e
+            );
+        }
     }
 }

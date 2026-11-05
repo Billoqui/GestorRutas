@@ -31,7 +31,24 @@ Cada módulo cumple una función específica:
 5. La persistencia registra ejecuciones y decisiones.
 6. El lanzador integra los componentes y ejecuta el sistema.
 
-## 2.2. Diagramas UML
+### 2.2. Carga dinámica de estrategias mediante Reflection
+
+El módulo `launcher` utiliza Reflection de Java para cargar las implementaciones de las estrategias durante la ejecución del programa.
+
+Esta funcionalidad se encuentra en la clase `EstrategiasConfiguracion`, que utiliza los siguientes métodos:
+
+- `Class.forName()`: localiza una clase mediante su nombre completo.
+- `asSubclass()`: comprueba que la clase cargada pertenece al contrato `Strategy`.
+- `getDeclaredConstructor()`: obtiene su constructor sin parámetros.
+- `newInstance()`: crea una instancia de la estrategia.
+
+De esta manera, el lanzador puede cargar dinámicamente las implementaciones de Dijkstra en Java, A* en Java y Dijkstra en Scala, sin instanciarlas directamente mediante el operador `new`.
+
+Una vez creadas, las estrategias se registran en `StrategyRegistry`, donde el motor adaptativo puede consultarlas y utilizarlas mediante el contrato común `Strategy`.
+
+Esta implementación facilita la incorporación de nuevas estrategias y demuestra el uso práctico de Reflection en Java.
+
+### 2.3. Diagramas UML
 
 Los siguientes diagramas representan la estructura interna y la organización general del sistema.
 

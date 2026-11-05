@@ -25,6 +25,7 @@ Durante el desarrollo se han realizado verificaciones de:
 - Compilación de los módulos Maven.
 - Pruebas automatizadas.
 - Ejecución de estrategias de búsqueda.
+- Carga dinámica de estrategias mediante Reflection de Java.
 - Adaptación automática por tiempo de ejecución.
 - Persistencia de ejecuciones y decisiones adaptativas.
 - Operaciones CRUD de PostgreSQL.
@@ -67,6 +68,7 @@ La configuración actual documenta los módulos Java. Los archivos generados se 
 - [x] Algoritmos de búsqueda en Java.
 - [x] Estrategia adicional en Scala.
 - [x] Registro y selección de estrategias.
+- [x] Carga dinámica de plugins mediante Reflection.
 - [x] Motor de adaptación automática.
 - [x] Monitorización de métricas.
 - [x] Reglas de adaptación por tiempo y errores.
