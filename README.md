@@ -33,6 +33,31 @@ Se ha comprobado un escenario en el que Dijkstra supera el umbral configurado y 
 
 También se ha ejecutado `.\mvnw.cmd clean verify` con resultado `BUILD SUCCESS`.
 
+## Documentación del código
+
+El proyecto utiliza Doxygen para generar documentación técnica a partir de los comentarios del código fuente Java.
+
+### Generar la documentación
+
+Es necesario tener Doxygen instalado y disponible desde la terminal.
+
+Desde la raíz del proyecto, ejecuta:
+
+```powershell
+doxygen .\Doxyfile
+
+```
+
+En Linux o macOS puedes ejecutar: `doxygen Doxyfile`.
+
+La documentación HTML se genera en `docs/doxygen/html/`.
+
+Para abrirla en Windows puedes utilizar: `Start-Process .\docs\doxygen\html\index.html`.
+
+La configuración actual documenta los módulos Java. Los archivos generados se excluyen de Git mediante `.gitignore`.
+
+
+
 ## Estado del desarrollo
 
 - [x] Configuración del entorno de desarrollo.
