@@ -31,6 +31,23 @@ Cada módulo cumple una función específica:
 5. La persistencia registra ejecuciones y decisiones.
 6. El lanzador integra los componentes y ejecuta el sistema.
 
+## 2.2. Diagramas UML
+
+Los siguientes diagramas representan la estructura interna y la organización general del sistema.
+
+### Diagrama de clases
+
+Muestra las principales clases, interfaces, atributos, métodos y relaciones entre los componentes.
+
+![Diagrama de clases](diagrams/class-diagram.png)
+
+### Diagrama de arquitectura
+
+Representa la distribución modular y la comunicación entre los componentes del sistema.
+
+![Diagrama de arquitectura](diagrams/architecture-diagram.png)
+
+Los archivos fuente editables de PlantUML se encuentran en `diagrams/`.
 ## 3. Contrato de estrategias
 
 El módulo `plugin-api` define el contrato común que permite intercambiar algoritmos.
