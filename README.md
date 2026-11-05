@@ -62,3 +62,18 @@ GitHub: https://github.com/Billoqui/GestorRutas
 **Proyecto académico individual — Ingeniería de Software**
 
 Desarrollado para aplicar programación orientada a objetos, arquitectura modular, interoperabilidad Java–Scala, selección adaptativa de algoritmos y persistencia de información.
+## Diagramas UML
+
+### Diagrama de clases
+
+Representa las clases principales del sistema, sus atributos, métodos y relaciones.
+
+![Diagrama de clases](docs/diagrams/class-diagram.png)
+
+### Diagrama de arquitectura
+
+Muestra la organización modular del proyecto y la comunicación entre sus componentes.
+
+![Diagrama de arquitectura](docs/diagrams/architecture-diagram.png)
+
+Los archivos fuente editables de PlantUML se encuentran en `docs/diagrams/`.
