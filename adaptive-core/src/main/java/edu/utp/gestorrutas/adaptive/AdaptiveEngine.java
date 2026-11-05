@@ -70,11 +70,18 @@ public class AdaptiveEngine {
             List<String> motivos =
                     administrador.obtenerMotivos(metricas);
 
-            if (motivos.isEmpty()) {
+            if (resultado.exitoso() && motivos.isEmpty()) {
                 break;
             }
 
-            motivosAcumulados.addAll(motivos);
+            if (!resultado.exitoso()) {
+                motivosAcumulados.add(
+                        "La estrategia " + actual.id()
+                                + " no pudo completar la ejecución"
+                );
+            } else {
+                motivosAcumulados.addAll(motivos);
+            }
 
             Strategy<?, ?> alternativa =
                     selector.seleccionarExcluyendo(

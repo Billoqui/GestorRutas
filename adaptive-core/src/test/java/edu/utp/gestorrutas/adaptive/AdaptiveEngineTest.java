@@ -324,6 +324,81 @@ class AdaptiveEngineTest {
         assertEquals(3, decision.motivos().size());
     }
 
+    @Test
+    void debeCambiarDeEstrategiaCuandoLaPrimeraFalla() {
+
+        Strategy<String, String> fallida = new Strategy<>() {
+            @Override
+            public String id() {
+                return "estrategia-fallida";
+            }
+
+            @Override
+            public boolean supports(Context contexto) {
+                return true;
+            }
+
+            @Override
+            public Result<String> execute(String entrada) {
+                return new Result<>(
+                        false,
+                        null,
+                        "No se pudo ejecutar la estrategia",
+                        10
+                );
+            }
+        };
+
+        Strategy<String, String> alternativa = new Strategy<>() {
+            @Override
+            public String id() {
+                return "estrategia-alternativa";
+            }
+
+            @Override
+            public boolean supports(Context contexto) {
+                return true;
+            }
+
+            @Override
+            public Result<String> execute(String entrada) {
+                return new Result<>(
+                        true,
+                        "Resultado correcto",
+                        "Ejecución completada",
+                        15
+                );
+            }
+        };
+
+        StrategyRegistry registro = new StrategyRegistry();
+        registro.registrar(fallida);
+        registro.registrar(alternativa);
+
+        MetricsMonitor monitor = new MetricsMonitor();
+        AdaptationManager administrador = new AdaptationManager();
+
+        AdaptiveEngine motor = new AdaptiveEngine(
+                new StrategySelector(registro),
+                monitor,
+                administrador
+        );
+
+        Result<String> resultado = motor.ejecutar(
+                new Context("A", "B", "distancia", false),
+                "entrada"
+        );
+
+        assertTrue(resultado.exitoso());
+        assertEquals("Resultado correcto", resultado.valor());
+
+        assertEquals(1, monitor.obtenerMetricas("estrategia-fallida")
+                .obtenerTotalEjecuciones());
+
+        assertEquals(1, monitor.obtenerMetricas("estrategia-alternativa")
+                .obtenerTotalEjecuciones());
+    }
+
     private Strategy<String, String> crearEstrategiaLenta(
             String id,
             String valor
