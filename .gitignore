@@ -49,3 +49,6 @@ Desktop.ini
 # Archivos temporales
 *.tmp
 *.bak
+
+# Documentación generada por Doxygen
+docs/doxygen/

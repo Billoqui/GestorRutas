@@ -4,7 +4,7 @@ package edu.utp.gestorrutas.api;
 /**
  * Representa el resultado de ejecutar una estrategia.
  *
- * @param <T> tipo de dato que contiene el resultado
+ * @tparam T tipo de dato que contiene el resultado
  * @param exitoso indica si la ejecución terminó correctamente
  * @param valor información devuelta por la estrategia
  * @param mensaje descripción del resultado o de un posible error
