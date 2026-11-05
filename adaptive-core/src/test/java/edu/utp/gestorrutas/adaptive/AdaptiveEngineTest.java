@@ -425,4 +425,90 @@ class AdaptiveEngineTest {
             }
         };
     }
+
+    @Test
+    void debeCambiarDeEstrategiaCuandoSeSuperaElPorcentajeDeErrores() {
+
+        Strategy<String, String> estrategiaFallida = new Strategy<>() {
+            @Override
+            public String id() {
+                return "estrategia-con-errores";
+            }
+
+            @Override
+            public boolean supports(Context contexto) {
+                return true;
+            }
+
+            @Override
+            public Result<String> execute(String entrada) {
+                return new Result<>(
+                        false,
+                        null,
+                        "No se pudo encontrar la ruta",
+                        10
+                );
+            }
+        };
+
+        Strategy<String, String> estrategiaAlternativa = new Strategy<>() {
+            @Override
+            public String id() {
+                return "estrategia-alternativa";
+            }
+
+            @Override
+            public boolean supports(Context contexto) {
+                return true;
+            }
+
+            @Override
+            public Result<String> execute(String entrada) {
+                return new Result<>(
+                        true,
+                        "Ruta encontrada",
+                        "Ejecución completada",
+                        15
+                );
+            }
+        };
+
+        StrategyRegistry registro = new StrategyRegistry();
+        registro.registrar(estrategiaFallida);
+        registro.registrar(estrategiaAlternativa);
+
+        MetricsMonitor monitor = new MetricsMonitor();
+
+        AdaptationManager administrador = new AdaptationManager();
+        administrador.agregarRegla(new ErrorThresholdRule(30));
+
+        AdaptiveEngine motor = new AdaptiveEngine(
+                new StrategySelector(registro),
+                monitor,
+                administrador
+        );
+
+        Result<String> resultado = motor.ejecutar(
+                new Context("A", "B", "distancia", false),
+                "entrada"
+        );
+
+        assertTrue(resultado.exitoso());
+        assertEquals("Ruta encontrada", resultado.valor());
+
+        AdaptationDecision decision =
+                motor.obtenerHistorial().obtenerTodas().get(0);
+
+        assertEquals("estrategia-con-errores", decision.estrategiaInicial());
+        assertEquals("estrategia-alternativa", decision.estrategiaAlternativa());
+        assertTrue(decision.huboCambio());
+
+        assertTrue(decision.motivos().contains(
+                "El porcentaje de errores alcanzó el límite permitido"
+        ));
+
+        assertTrue(decision.motivos().contains(
+                "La estrategia estrategia-con-errores no pudo completar la ejecución"
+        ));
+    }
 }

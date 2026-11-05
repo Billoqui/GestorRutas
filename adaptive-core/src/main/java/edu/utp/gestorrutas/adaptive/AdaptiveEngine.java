@@ -74,13 +74,13 @@ public class AdaptiveEngine {
                 break;
             }
 
+            motivosAcumulados.addAll(motivos);
+
             if (!resultado.exitoso()) {
                 motivosAcumulados.add(
                         "La estrategia " + actual.id()
                                 + " no pudo completar la ejecución"
                 );
-            } else {
-                motivosAcumulados.addAll(motivos);
             }
 
             Strategy<?, ?> alternativa =
