@@ -25,6 +25,7 @@ import edu.utp.gestorrutas.persistence.DatabaseConnection;
 import edu.utp.gestorrutas.persistence.AdaptationDecisionRepository;
 
 import edu.utp.gestorrutas.persistence.ExecutionRepository;
+import edu.utp.gestorrutas.adaptive.ErrorThresholdRule;
 
 public class GestorRutasApp {
 
@@ -58,6 +59,12 @@ public class GestorRutasApp {
 
         if (configuracion.isCambiarSiSuperaLimite()) {
             administrador.agregarRegla(new ExecutionTimeRule(configuracion));
+        }
+
+        if (configuracion.isCambiarSiSuperaErrores()) {
+            administrador.agregarRegla(
+                    new ErrorThresholdRule(configuracion.getPorcentajeMaximoErrores())
+            );
         }
 
         AdaptiveEngine motor = new AdaptiveEngine(

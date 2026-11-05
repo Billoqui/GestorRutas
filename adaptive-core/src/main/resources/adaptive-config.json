@@ -1,6 +1,8 @@
 ﻿{
   "adaptacion": {
     "tiempoMaximoMs": 100,
-    "cambiarSiSuperaLimite": true
+    "cambiarSiSuperaLimite": true,
+    "porcentajeMaximoErrores": 30,
+    "cambiarSiSuperaErrores": true
   }
 }

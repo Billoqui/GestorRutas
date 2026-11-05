@@ -38,6 +38,13 @@ public class AdaptiveConfigLoader {
                 );
             }
 
+            if (configuracion.getPorcentajeMaximoErrores() < 0 ||
+                    configuracion.getPorcentajeMaximoErrores() > 100) {
+                throw new IllegalArgumentException(
+                        "El porcentaje máximo de errores debe estar entre 0 y 100"
+                );
+            }
+
             return configuracion;
 
         } catch (IOException e) {
