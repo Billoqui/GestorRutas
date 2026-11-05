@@ -42,7 +42,7 @@ public class GestorRutasApp {
 
 	    ExecutionRepository repositorioEjecuciones = new ExecutionRepository(conexionBD);
 
-        StrategyRegistry registro = EstrategiasConfiguracion.crearRegistro();
+        StrategyRegistry registro = EstrategiasConfiguracion.crearRegistro("tiempo");
         StrategySelector selector = new StrategySelector(registro);
 
         RouteRequest solicitud = new RouteRequest(grafo, "A", "D");
@@ -134,11 +134,17 @@ public class GestorRutasApp {
 
         // SEGUNDA PRUEBA: SELECCIÓN DE A*
 
+        StrategyRegistry registroDistancia =
+                EstrategiasConfiguracion.crearRegistro("distancia");
+
+        StrategySelector selectorDistancia =
+                new StrategySelector(registroDistancia);
+
         MetricsMonitor monitorAStar = new MetricsMonitor();
         AdaptationManager administradorAStar = new AdaptationManager();
 
         AdaptiveEngine motorAStar = new AdaptiveEngine(
-                selector,
+                selectorDistancia,
                 monitorAStar,
                 administradorAStar
         );
@@ -194,6 +200,72 @@ public class GestorRutasApp {
         System.out.println("\nMÉTRICAS DE A*:");
 
         monitorAStar.obtenerTodasLasMetricas().forEach((id, metricas) -> {
+            System.out.println("\nEstrategia: " + id);
+            System.out.println("Ejecuciones: " + metricas.obtenerTotalEjecuciones());
+            System.out.println("Errores: " + metricas.obtenerTotalErrores());
+            System.out.println("Tiempo promedio: " + metricas.obtenerTiempoPromedioMs() + " ms");
+        });
+
+        // TERCERA PRUEBA: SELECCIÓN DE DIJKSTRA SCALA
+
+        StrategyRegistry registroScala =
+                EstrategiasConfiguracion.crearRegistro("scala");
+
+        StrategySelector selectorScala =
+                new StrategySelector(registroScala);
+
+        MetricsMonitor monitorScala = new MetricsMonitor();
+        AdaptationManager administradorScala = new AdaptationManager();
+
+        AdaptiveEngine motorScala = new AdaptiveEngine(
+                selectorScala,
+                monitorScala,
+                administradorScala
+        );
+
+        Context contextoScala = new Context(
+                "A",
+                "D",
+                "scala",
+                false
+        );
+
+        Result<Route> resultadoScala = motorScala.ejecutar(
+                contextoScala,
+                solicitud
+        );
+
+        motorScala.obtenerEjecuciones().forEach(ejecucion -> {
+            repositorioEjecuciones.guardar(
+                    ejecucion.estrategia(),
+                    ejecucion.tiempoMs(),
+                    ejecucion.exitoso()
+            );
+        });
+
+        motorScala.obtenerHistorial().obtenerTodas().forEach(decision -> {
+            repositorioDecisiones.guardar(
+                    decision.estrategiaInicial(),
+                    decision.estrategiaAlternativa(),
+                    decision.motivos()
+            );
+        });
+
+        System.out.println("\n================================");
+        System.out.println("       PRUEBA DIJKSTRA SCALA");
+        System.out.println("================================");
+
+        if (resultadoScala.exitoso()) {
+            System.out.println("Ruta: " + resultadoScala.valor().nodeIds());
+            System.out.println("Distancia: " + resultadoScala.valor().totalWeight() + " km");
+            System.out.println("Mensaje: " + resultadoScala.mensaje());
+        } else {
+            System.out.println("Error: " + resultadoScala.mensaje());
+        }
+
+        System.out.println("\nMÉTRICAS DE DIJKSTRA SCALA:");
+
+        monitorScala.obtenerTodasLasMetricas().forEach((id, metricas) -> {
             System.out.println("\nEstrategia: " + id);
             System.out.println("Ejecuciones: " + metricas.obtenerTotalEjecuciones());
             System.out.println("Errores: " + metricas.obtenerTotalErrores());
