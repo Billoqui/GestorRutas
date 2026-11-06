@@ -139,7 +139,15 @@ public class GestorRutasApp {
             }
         });
 
-        // SEGUNDA PRUEBA: SELECCIÓN DE A*
+        // SEGUNDA PRUEBA: ADAPTACIÓN POR PORCENTAJE DE ERRORES
+
+        Graph grafoSinCoordenadas = crearGrafoSinCoordenadas();
+
+        RouteRequest solicitudAdaptativa = new RouteRequest(
+                grafoSinCoordenadas,
+                "A",
+                "B"
+        );
 
         StrategyRegistry registroDistancia =
                 EstrategiasConfiguracion.crearRegistro("distancia");
@@ -150,6 +158,8 @@ public class GestorRutasApp {
         MetricsMonitor monitorAStar = new MetricsMonitor();
         AdaptationManager administradorAStar = new AdaptationManager();
 
+        administradorAStar.agregarRegla(new ErrorThresholdRule(30));
+
         AdaptiveEngine motorAStar = new AdaptiveEngine(
                 selectorDistancia,
                 monitorAStar,
@@ -158,42 +168,38 @@ public class GestorRutasApp {
 
         Context contextoAStar = new Context(
                 "A",
-                "D",
+                "B",
                 "distancia",
                 false
         );
 
         Result<Route> resultadoAStar = motorAStar.ejecutar(
                 contextoAStar,
-                solicitud
+                solicitudAdaptativa
         );
 
         motorAStar.obtenerEjecuciones().forEach(ejecucion -> {
-
             repositorioEjecuciones.guardar(
                     ejecucion.estrategia(),
                     ejecucion.tiempoMs(),
                     ejecucion.exitoso()
             );
-
         });
 
-        System.out.println("\nEjecuciones de A* guardadas en PostgreSQL.");
+        System.out.println("\nEjecuciones de adaptación por errores guardadas en PostgreSQL.");
 
         motorAStar.obtenerHistorial().obtenerTodas().forEach(decision -> {
-
             repositorioDecisiones.guardar(
                     decision.estrategiaInicial(),
                     decision.estrategiaAlternativa(),
                     decision.motivos()
             );
-
         });
 
-        System.out.println("\nDecisión de A* guardada en PostgreSQL.");
+        System.out.println("\nDecisión de adaptación por errores guardada en PostgreSQL.");
 
         System.out.println("\n================================");
-        System.out.println("       PRUEBA ADAPTATIVA A*");
+        System.out.println("       ADAPTACIÓN POR ERRORES");
         System.out.println("================================");
 
         if (resultadoAStar.exitoso()) {
@@ -204,7 +210,7 @@ public class GestorRutasApp {
             System.out.println("Error: " + resultadoAStar.mensaje());
         }
 
-        System.out.println("\nMÉTRICAS DE A*:");
+        System.out.println("\nMÉTRICAS DE ADAPTACIÓN:");
 
         monitorAStar.obtenerTodasLasMetricas().forEach((id, metricas) -> {
             System.out.println("\nEstrategia: " + id);
@@ -213,6 +219,14 @@ public class GestorRutasApp {
             System.out.println("Tiempo promedio: " + metricas.obtenerTiempoPromedioMs() + " ms");
         });
 
+        System.out.println("\nHISTORIAL DE ADAPTACIÓN:");
+
+        motorAStar.obtenerHistorial().obtenerTodas().forEach(decision -> {
+            System.out.println("Estrategia inicial: " + decision.estrategiaInicial());
+            System.out.println("Motivos: " + decision.motivos());
+            System.out.println("¿Hubo cambio?: " + decision.huboCambio());
+            System.out.println("Estrategia alternativa: " + decision.estrategiaAlternativa());
+        });
         // TERCERA PRUEBA: SELECCIÓN DE DIJKSTRA SCALA
 
         StrategyRegistry registroScala =
@@ -299,6 +313,20 @@ public class GestorRutasApp {
         grafo.addConnection(new Connection(b, d, 3.0));
         grafo.addConnection(new Connection(c, d, 2.0));
         grafo.addConnection(new Connection(b, c, 3.0));
+
+        return grafo;
+    }
+    private static Graph crearGrafoSinCoordenadas() {
+
+        Graph grafo = new Graph();
+
+        Node a = new Node("A", "Origen");
+        Node b = new Node("B", "Destino");
+
+        grafo.addNode(a);
+        grafo.addNode(b);
+
+        grafo.addConnection(new Connection(a, b, 5.0));
 
         return grafo;
     }
