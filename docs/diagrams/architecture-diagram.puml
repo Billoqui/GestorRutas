@@ -11,6 +11,7 @@ actor "Usuario" as Usuario
 package "launcher" {
     component "GestorRutasApp" as App
     component "EstrategiasConfiguracion" as ConfigEstrategias
+    component "PruebaCrudPostgreSQL" as PruebaCRUD
 }
 
 package "adaptive-core" {
@@ -20,6 +21,8 @@ package "adaptive-core" {
     component "MetricsMonitor" as Monitor
     component "AdaptationManager" as Adaptador
     component "AdaptationHistory" as Historial
+    component "AdaptiveConfigLoader" as Cargador
+    component "AdaptiveConfig" as Config
     component "Reglas de adaptación" as Reglas
 }
 
@@ -60,6 +63,11 @@ App --> Motor : Ejecuta solicitud
 App --> Contexto : Crea contexto
 App --> DTOJava : Prepara entrada
 
+ConfigEstrategias --> Registro : Crea registro
+ConfigEstrategias ..> Dijkstra : Carga por Reflection
+ConfigEstrategias ..> AStar : Carga por Reflection
+ConfigEstrategias ..> Scala : Carga por Reflection
+
 Motor --> Selector : Solicita estrategia
 Selector --> Registro : Busca estrategia compatible
 Registro --> Contrato : Mantiene estrategias registradas
@@ -72,6 +80,9 @@ Motor --> Monitor : Registra resultados
 Motor --> Adaptador : Consulta reglas
 Adaptador --> Reglas : Evalúa métricas
 Motor --> Historial : Conserva decisiones
+
+Cargador --> Config : Carga configuración JSON
+Config --> Reglas : Define límites y activación
 
 Dijkstra --> Grafo
 AStar --> Grafo
@@ -88,6 +99,7 @@ Motor --> Resultado : Recibe resultado
 
 App --> RepoEjecuciones : Guarda ejecuciones
 App --> RepoDecisiones : Guarda decisiones
+PruebaCRUD --> RepoEjecuciones : Prueba CRUD
 RepoEjecuciones --> ConexionBD
 RepoDecisiones --> ConexionBD
 ConexionBD --> BD : JDBC
@@ -101,6 +113,11 @@ end note
 note bottom of Motor
   Selecciona, ejecuta, mide y puede
   cambiar de estrategia según las reglas.
+end note
+
+note bottom of ConfigEstrategias
+  Reflection permite cargar plugins
+  mediante sus nombres de clase.
 end note
 
 @enduml

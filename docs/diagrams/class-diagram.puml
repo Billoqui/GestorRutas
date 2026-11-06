@@ -45,12 +45,12 @@ package "domain" {
     class Graph {
         -nodes: Map<String, Node>
         -connections: List<Connection>
-        +addNode(node: Node)
-        +addConnection(connection: Connection)
+        +addNode(node: Node): void
+        +addConnection(connection: Connection): void
         +getNode(id: String): Node
-        +getNodes(): Map
-        +getConnections(): List
-        +getOutgoingConnections(node: Node): List
+        +getNodes(): Map<String, Node>
+        +getConnections(): List<Connection>
+        +getOutgoingConnections(node: Node): List<Connection>
     }
 
     class Haversine <<utility>> {
@@ -70,38 +70,43 @@ package "adaptive-core" {
         -monitor: MetricsMonitor
         -administrador: AdaptationManager
         -historial: AdaptationHistory
-        +ejecutar(entrada, contexto)
-        +obtenerHistorial()
-        +obtenerEjecuciones()
+        +ejecutar<I, O>(contexto: Context, entrada: I): Result<O>
+        +obtenerHistorial(): AdaptationHistory
+        +obtenerEjecuciones(): List<ExecutionRecord>
+        -ejecutarEstrategia<I, O>(estrategia: Strategy<?, ?>, entrada: I): Result<O>
     }
 
     class StrategySelector {
         -registro: StrategyRegistry
-        +seleccionar(contexto: Context)
-        +seleccionar(contexto: Context, excluirId: String)
+        +seleccionar(contexto: Context): Strategy<?, ?>
+        +seleccionar(contexto: Context, estrategiaExcluida: String): Strategy<?, ?>
+        +seleccionarExcluyendo(contexto: Context, estrategiasExcluidas: Set<String>): Strategy<?, ?>
     }
 
     class StrategyRegistry {
-        -estrategias: List<Strategy>
-        +registrar(estrategia: Strategy)
-        +obtenerTodas()
-        +buscarPorId(id: String)
+        -estrategias: List<Strategy<?, ?>>
+        +registrar(estrategia: Strategy<?, ?>): void
+        +obtenerTodas(): List<Strategy<?, ?>>
+        +buscarPorId(id: String): Strategy<?, ?>
     }
 
     class MetricsMonitor {
         -metricas: Map<String, StrategyMetrics>
         -ejecuciones: List<ExecutionRecord>
-        +registrarResultado(estrategia, resultado)
-        +obtenerMetricas(id: String)
-        +obtenerTodasLasMetricas()
-        +obtenerEjecuciones()
+        +registrarResultado(estrategiaId: String, resultado: Result<?>): void
+        +obtenerMetricas(id: String): StrategyMetrics
+        +obtenerTodasLasMetricas(): Map<String, StrategyMetrics>
+        +obtenerEjecuciones(): List<ExecutionRecord>
     }
 
     class StrategyMetrics {
         -totalEjecuciones: int
         -totalErrores: int
         -tiempoTotalMs: long
-        +registrarEjecucion(resultado)
+        +registrarEjecucion(resultado: Result<?>): void
+        +obtenerTotalEjecuciones(): int
+        +obtenerTotalErrores(): int
+        +obtenerTiempoTotalMs(): long
         +obtenerTiempoPromedioMs(): double
     }
 
@@ -113,9 +118,9 @@ package "adaptive-core" {
 
     class AdaptationManager {
         -reglas: List<AdaptationRule>
-        +agregarRegla(regla: AdaptationRule)
-        +debeCambiar(metricas)
-        +obtenerMotivos(metricas)
+        +agregarRegla(regla: AdaptationRule): void
+        +debeCambiar(metricas: StrategyMetrics): boolean
+        +obtenerMotivos(metricas: StrategyMetrics): List<String>
     }
 
     interface AdaptationRule {
@@ -125,21 +130,24 @@ package "adaptive-core" {
 
     class ExecutionTimeRule {
         -tiempoMaximoMs: double
-        +debeCambiar(metricas): boolean
+        +ExecutionTimeRule(tiempoMaximoMs: double)
+        +ExecutionTimeRule(configuracion: AdaptiveConfig)
+        +debeCambiar(metricas: StrategyMetrics): boolean
         +obtenerMotivo(): String
     }
 
     class ErrorThresholdRule {
         -porcentajeMaximoErrores: double
-        +debeCambiar(metricas): boolean
+        +ErrorThresholdRule(porcentajeMaximoErrores: double)
+        +debeCambiar(metricas: StrategyMetrics): boolean
         +obtenerMotivo(): String
     }
 
     class AdaptationHistory {
         -decisiones: List<AdaptationDecision>
-        +registrar(decision: AdaptationDecision)
-        +obtenerTodas()
-        +limpiar()
+        +registrar(decision: AdaptationDecision): void
+        +obtenerTodas(): List<AdaptationDecision>
+        +limpiar(): void
     }
 
     class AdaptationDecision <<record>> {
@@ -150,16 +158,28 @@ package "adaptive-core" {
     }
 
     class AdaptiveConfig {
-        -tiempoMaximoMs: double
+        -tiempoMaximoMs: long
         -cambiarSiSuperaLimite: boolean
+        -porcentajeMaximoErrores: double
+        -cambiarSiSuperaErrores: boolean
+        +getTiempoMaximoMs(): long
+        +setTiempoMaximoMs(tiempoMaximoMs: long): void
+        +isCambiarSiSuperaLimite(): boolean
+        +setCambiarSiSuperaLimite(valor: boolean): void
+        +getPorcentajeMaximoErrores(): double
+        +setPorcentajeMaximoErrores(porcentaje: double): void
+        +isCambiarSiSuperaErrores(): boolean
+        +setCambiarSiSuperaErrores(valor: boolean): void
     }
 
     class AdaptiveConfigRoot {
         -adaptacion: AdaptiveConfig
+        +getAdaptacion(): AdaptiveConfig
+        +setAdaptacion(adaptacion: AdaptiveConfig): void
     }
 
     class AdaptiveConfigLoader {
-        +cargar(): AdaptiveConfigRoot
+        +cargar(): AdaptiveConfig
     }
 
     AdaptiveEngine --> StrategySelector
@@ -214,20 +234,25 @@ package "plugins-scala" {
 
 package "persistence" {
     class DatabaseConnection {
-        +conectar(): Connection
+        -URL: String
+        -USUARIO: String
+        -contrasena: String
+        +conectar(): java.sql.Connection
     }
 
     class ExecutionRepository {
         -database: DatabaseConnection
-        +guardar(estrategia, tiempoMs, exitoso)
-        +listar()
-        +actualizar(id, estrategia, tiempoMs, exitoso)
-        +eliminar(id)
+        +ExecutionRepository(database: DatabaseConnection)
+        +guardar(estrategia: String, tiempoMs: long, exitoso: boolean): void
+        +listar(): List<String>
+        +actualizar(id: int, estrategia: String, tiempoMs: long, exitoso: boolean): boolean
+        +eliminar(id: int): boolean
     }
 
     class AdaptationDecisionRepository {
         -database: DatabaseConnection
-        +guardar(estrategiaInicial, estrategiaAlternativa, motivos)
+        +AdaptationDecisionRepository(database: DatabaseConnection)
+        +guardar(estrategiaInicial: String, estrategiaAlternativa: String, motivos: List<String>): void
     }
 
     ExecutionRepository --> DatabaseConnection
@@ -236,12 +261,21 @@ package "persistence" {
 
 package "launcher" {
     class GestorRutasApp {
-        +main(args: String[])
+        +main(args: String[]): void
         -crearGrafo(): Graph
+        -crearGrafoSinCoordenadas(): Graph
     }
 
     class EstrategiasConfiguracion {
-        +crearRegistro(): StrategyRegistry
+        -DIJKSTRA: String {static}
+        -ASTAR: String {static}
+        -DIJKSTRA_SCALA: String {static}
+        +crearRegistro(criterio: String): StrategyRegistry {static}
+        -cargarEstrategia(nombreClase: String): Strategy<?, ?> {static}
+    }
+
+    class PruebaCrudPostgreSQL {
+        +main(args: String[]): void
     }
 
     GestorRutasApp ..> EstrategiasConfiguracion
@@ -252,6 +286,8 @@ package "launcher" {
     EstrategiasConfiguracion ..> AStarStrategy
     EstrategiasConfiguracion ..> DijkstraStrategy
     EstrategiasConfiguracion ..> DijkstraScalaStrategy
+    PruebaCrudPostgreSQL ..> DatabaseConnection
+    PruebaCrudPostgreSQL ..> ExecutionRepository
 }
 
 @enduml
